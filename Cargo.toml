@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-deck = { path = "../deck/" }
+deck = { git = "https://github.com/HeadedBranch/deck-rs" }
