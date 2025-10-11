@@ -159,12 +159,12 @@ mod tests {
 
     #[test]
     fn test_looping_simple() {
-        let mut hand1 = vec![
+        let hand1 = vec![
             Card::new(Jack, Clubs),
             Card::new(Two, Clubs),
             Card::new(Two, Clubs),
         ];
-        let mut hand2 = vec![
+        let hand2 = vec![
             Card::new(Two, Clubs),
             Card::new(Jack, Clubs),
             Card::new(Two, Clubs),
@@ -182,7 +182,7 @@ mod tests {
     }
     #[test]
     fn test_looping_complex(){
-        let mut hand1 = vec![
+        let hand1 = vec![
             Card::new(Two, Diamonds),
             Card::new(Two, Diamonds),
             Card::new(Two, Diamonds),
@@ -210,7 +210,7 @@ mod tests {
             Card::new(Two, Diamonds),
             Card::new(Two, Diamonds),
         ];
-        let mut hand2 = vec![
+        let hand2 = vec![
             Card::new(Two, Clubs),
             Card::new(Two, Clubs),
             Card::new(Two, Clubs),
