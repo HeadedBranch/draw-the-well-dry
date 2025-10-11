@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use crate::ExitStates::{Looping, P1Win, P2Win};
 use deck::{Card, Deck};
-use std::time::Instant;
+use std::fs::File;
+use std::io::prelude::*;
 
 #[derive(Eq, PartialEq, Hash)]
 struct GameFrame {
@@ -23,21 +24,25 @@ fn main() {
     let mut games: u128 = 0;
     let mut loops: u128 = 0;
     loop {
-        games += 1;
         deck.shuffle();
-        let time = Instant::now();
         let state = handle_game(&deck);
-        let time = time.elapsed();
+        games += 1;
         if state == P1Win {
             wins += 1;
         } else if state == Looping {
             loops += 1;
+            #[allow(clippy::collapsible_if)]
+            if let Ok(mut file) = File::open("loop-configurations.txt") {
+                if let Err(e) =file.write_all(format!("{:?}",deck.deck()).as_bytes()) {
+                    println!("{:?}", deck.deck());
+                    println!("{e}");
+                }
+            }
         }
         println!(
-            "Loops = {}, Player 1 win percentage = {}, Time = {:?}",
+            "Loops = {}, Player 1 win percentage = {}",
             loops,
             wins as f64 * 100.0 / games as f64,
-            time
         );
         print!("{}[2J", 27 as char);
     }
