@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use crate::ExitStates::{Looping, P1Win, P2Win};
 use deck::{Card, Deck};
 use std::fs::File;
@@ -6,8 +6,8 @@ use std::io::prelude::*;
 
 #[derive(Eq, PartialEq, Hash)]
 struct GameFrame {
-    hand1: Vec<Card>,
-    hand2: Vec<Card>,
+    hand1: VecDeque<Card>,
+    hand2: VecDeque<Card>,
     turn: bool,
 }
 
@@ -49,10 +49,12 @@ fn main() {
 }
 
 fn handle_game(deck: &Deck) -> ExitStates {
-    let mut p1 = deck.deck()[..(deck.size() / 2)].to_vec();
-    let mut p2 = deck.deck()[(deck.size() / 2)..].to_vec();
+    let mut p1: VecDeque<Card> = VecDeque::new();
+    p1.append(&mut VecDeque::from(deck.deck()[..(deck.size() / 2)].to_vec()));
+    let mut p2: VecDeque<Card> = VecDeque::new();
+    p2.append(&mut VecDeque::from(deck.deck()[(deck.size() / 2)..].to_vec()));
     let mut turn = true;
-    let mut centre: Vec<Card> = Vec::new();
+    let mut centre: VecDeque<Card> = VecDeque::new();
     let mut game_frames = HashSet::<GameFrame>::new();
     loop {
         if p1.is_empty() {
@@ -74,12 +76,13 @@ fn handle_game(deck: &Deck) -> ExitStates {
         let penalty;
         let card;
         if turn {
-            (penalty, card) = check_penalty_card(p1.as_mut());
+            (penalty, card) = check_penalty_card(&mut p1);
         } else {
-            (penalty, card) = check_penalty_card(p2.as_mut());
+            (penalty, card) = check_penalty_card(&mut p2);
         }
+
         turn = !turn;
-        centre.push(card);
+        centre.push_back(card);
         if penalty != 0 {
             #[allow(clippy::collapsible_if)]
             if let Err(e) = handle_penalty(
@@ -95,8 +98,8 @@ fn handle_game(deck: &Deck) -> ExitStates {
     };
 }
 
-fn check_penalty_card(deck: &mut Vec<Card>) -> (u8, Card) {
-    let card = deck.pop().expect("Deck is empty");
+fn check_penalty_card(deck: &mut VecDeque<Card>) -> (u8, Card) {
+    let card = deck.pop_front().expect("Deck is empty");
     (
         match card.value() {
             deck::CardValue::Jack => 1,
@@ -112,9 +115,9 @@ fn check_penalty_card(deck: &mut Vec<Card>) -> (u8, Card) {
 fn handle_penalty(
     card_count: u8,
     turn: &mut bool,
-    p1: &mut Vec<Card>,
-    p2: &mut Vec<Card>,
-    centre: &mut Vec<Card>,
+    p1: &mut VecDeque<Card>,
+    p2: &mut VecDeque<Card>,
+    centre: &mut VecDeque<Card>,
 ) -> Result<(), ExitStates> {
     *turn = !*turn;
     for _ in 0..card_count {
@@ -131,7 +134,7 @@ fn handle_penalty(
         } else {
             (penalty, centre_card) = check_penalty_card(p1);
         }
-        centre.push(centre_card);
+        centre.push_back(centre_card);
         if penalty == 0 {
             continue;
         }
@@ -139,13 +142,9 @@ fn handle_penalty(
         break;
     }
     if *turn {
-        p1.reverse();
         p1.append(centre);
-        p1.reverse();
     } else {
-        p2.reverse();
         p2.append(centre);
-        p2.reverse();
     }
     Ok(())
 }
@@ -170,8 +169,6 @@ mod tests {
             Card::new(Jack, Clubs),
             Card::new(Two, Clubs),
         ];
-        hand1.reverse();
-        hand2.reverse();
         let mut deck = Vec::new();
         for card in hand1 {
             deck.push(card);
@@ -242,8 +239,6 @@ mod tests {
             Card::new(Ace, Clubs),
         ];
         let mut deck = Vec::new();
-        hand1.reverse();
-        hand2.reverse();
         for card in hand1 {
             deck.push(card);
         }
