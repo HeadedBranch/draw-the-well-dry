@@ -40,9 +40,10 @@ fn main() {
             }
         }
         println!(
-            "Loops = {}, Player 1 win percentage = {}",
+            "Loops = {}, Games = {} Player 1 win percentage = {}",
             loops,
-            wins as f64 * 100.0 / games as f64,
+            games,
+            wins as f64 * 100.0 / games as f64
         );
         print!("{}[2J", 27 as char);
     }
