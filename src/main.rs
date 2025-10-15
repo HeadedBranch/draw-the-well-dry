@@ -1,8 +1,10 @@
-use std::collections::{HashSet, VecDeque};
 use crate::ExitStates::{Looping, P1Win, P2Win};
 use deck::{Card, Deck};
+use std::collections::{HashSet, VecDeque};
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::prelude::*;
+use std::io::BufWriter;
 
 #[derive(Eq, PartialEq, Hash)]
 struct GameFrame {
@@ -23,39 +25,78 @@ fn main() {
     let mut wins: u128 = 0;
     let mut games: u128 = 0;
     let mut loops: u128 = 0;
+
+    let mut valid_lines = Vec::new();
+    let mut lines = String::new();
+    if let Ok(mut f) = OpenOptions::new().read(true).open("game_results.txt") {
+        let _ = f.read_to_string(&mut lines);
+        for line in lines.lines() {
+            if line.ends_with("P1") {
+                wins += 1;
+                valid_lines.push(line);
+            } else if line.ends_with("P2") {
+                valid_lines.push(line);
+            } else {
+                continue;
+            }
+            games += 1;
+        }
+    }
+    let file = match OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open("game_results.txt") {
+        Ok(x) => x,
+        Err(e) => panic!("{e}"),
+    };
+    let mut writer = BufWriter::new(file);
+    for line in valid_lines {
+        writeln!(writer, "{}", line).unwrap();
+    }
     loop {
         deck.shuffle();
+        writer.write_fmt(format_args!("{}", deck)).unwrap();
         let state = handle_game(&deck);
         games += 1;
-        if state == P1Win {
-            wins += 1;
-        } else if state == Looping {
-            loops += 1;
-            #[allow(clippy::collapsible_if)]
-            if let Ok(mut file) = File::open("loop-configurations.txt") {
-                if let Err(e) =file.write_all(format!("{:?}",deck.deck()).as_bytes()) {
-                    println!("{:?}", deck.deck());
-                    println!("{e}");
+        match state {
+            P1Win => {
+                writer.write_all(b"P1\n").unwrap();
+                wins += 1;
+            }
+            P2Win => writer.write_all(b"P2\n").unwrap(),
+            Looping => {
+                loops += 1;
+                #[allow(clippy::collapsible_if)]
+                if let Ok(mut file) = File::create("loop_configurations.txt") {
+                    if let Err(e) = file.write_all(format!("{:?}", deck.deck()).as_bytes()) {
+                        println!("{:?}", deck.deck());
+                        println!("{e}");
+                    }
                 }
             }
         }
-        if games.is_multiple_of(500) {
+        if games.is_multiple_of(100000) {
             println!(
                 "Loops = {}, Games = {} Player 1 win percentage = {}",
                 loops,
                 games,
                 wins as f64 * 100.0 / games as f64
             );
-            print!("{}[2J", 27 as char);
+            writer.flush().unwrap();
         }
     }
 }
 
 fn handle_game(deck: &Deck) -> ExitStates {
     let mut p1: VecDeque<Card> = VecDeque::new();
-    p1.append(&mut VecDeque::from(deck.deck()[..(deck.size() / 2)].to_vec()));
+    p1.append(&mut VecDeque::from(
+        deck.deck()[..(deck.size() / 2)].to_vec(),
+    ));
     let mut p2: VecDeque<Card> = VecDeque::new();
-    p2.append(&mut VecDeque::from(deck.deck()[(deck.size() / 2)..].to_vec()));
+    p2.append(&mut VecDeque::from(
+        deck.deck()[(deck.size() / 2)..].to_vec(),
+    ));
     let mut turn = true;
     let mut centre: VecDeque<Card> = VecDeque::new();
     let mut game_frames = HashSet::<GameFrame>::new();
@@ -88,17 +129,11 @@ fn handle_game(deck: &Deck) -> ExitStates {
         centre.push_back(card);
         if penalty != 0 {
             #[allow(clippy::collapsible_if)]
-            if let Err(e) = handle_penalty(
-                penalty,
-                &mut turn,
-                &mut p1,
-                &mut p2,
-                &mut centre
-            ) {
+            if let Err(e) = handle_penalty(penalty, &mut turn, &mut p1, &mut p2, &mut centre) {
                 return e;
             }
         }
-    };
+    }
 }
 
 fn check_penalty_card(deck: &mut VecDeque<Card>) -> (u8, Card) {
@@ -154,11 +189,11 @@ fn handle_penalty(
 
 #[cfg(test)]
 mod tests {
-    use deck::{Card, Deck};
-    use deck::CardValue::*;
-    use deck::Suit::*;
     use crate::ExitStates::Looping;
     use crate::handle_game;
+    use deck::CardValue::*;
+    use deck::Suit::*;
+    use deck::{Card, Deck};
 
     #[test]
     fn test_looping_simple() {
@@ -184,7 +219,7 @@ mod tests {
         assert_eq!(result, Looping);
     }
     #[test]
-    fn test_looping_complex(){
+    fn test_looping_complex() {
         let hand1 = vec![
             Card::new(Two, Diamonds),
             Card::new(Two, Diamonds),
