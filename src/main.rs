@@ -28,6 +28,7 @@ fn main() {
 
     let mut valid_lines = Vec::new();
     let mut lines = String::new();
+    println!("Starting save loading");
     if let Ok(mut f) = OpenOptions::new().read(true).open("game_results.txt") {
         let _ = f.read_to_string(&mut lines);
         for line in lines.lines() {
@@ -43,19 +44,29 @@ fn main() {
         }
     }
     println!("Save loaded");
+    if lines.lines().count() != valid_lines.iter().count() {
+        let file = match OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open("game_results.txt") {
+            Ok(x) => x,
+            Err(e) => panic!("{e}"),
+        };
+        let mut writer = BufWriter::new(file);
+        for line in valid_lines {
+            writeln!(writer, "{}", line).unwrap();
+        }
+        writer.flush().unwrap();
+    }
     let file = match OpenOptions::new()
         .create(true)
-        .truncate(true)
-        .write(true)
+        .append(true)
         .open("game_results.txt") {
         Ok(x) => x,
         Err(e) => panic!("{e}"),
     };
     let mut writer = BufWriter::new(file);
-    for line in valid_lines {
-        writeln!(writer, "{}", line).unwrap();
-    }
-    writer.flush().unwrap();
     println!("Initialisation complete");
     loop {
         deck.shuffle();
@@ -87,6 +98,7 @@ fn main() {
                 wins as f64 * 100.0 / games as f64
             );
             writer.flush().unwrap();
+            println!("Finished writing games up to {games}");
         }
     }
 }
