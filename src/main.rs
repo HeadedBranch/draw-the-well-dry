@@ -42,6 +42,7 @@ fn main() {
             games += 1;
         }
     }
+    println!("Save loaded");
     let file = match OpenOptions::new()
         .create(true)
         .truncate(true)
@@ -54,6 +55,8 @@ fn main() {
     for line in valid_lines {
         writeln!(writer, "{}", line).unwrap();
     }
+    writer.flush().unwrap();
+    println!("Initialisation complete");
     loop {
         deck.shuffle();
         writer.write_fmt(format_args!("{}", deck)).unwrap();
@@ -76,7 +79,7 @@ fn main() {
                 }
             }
         }
-        if games.is_multiple_of(100000) {
+        if games.is_multiple_of(1000000) {
             println!(
                 "Loops = {}, Games = {} Player 1 win percentage = {}",
                 loops,
@@ -191,99 +194,17 @@ fn handle_penalty(
 mod tests {
     use crate::ExitStates::Looping;
     use crate::handle_game;
-    use deck::CardValue::*;
-    use deck::Suit::*;
-    use deck::{Card, Deck};
+    use deck::Deck;
 
     #[test]
     fn test_looping_simple() {
-        let hand1 = vec![
-            Card::new(Jack, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-        ];
-        let hand2 = vec![
-            Card::new(Two, Clubs),
-            Card::new(Jack, Clubs),
-            Card::new(Two, Clubs),
-        ];
-        let mut deck = Vec::new();
-        for card in hand1 {
-            deck.push(card);
-        }
-        for card in hand2 {
-            deck.push(card);
-        }
-        let deck = Deck::new_custom(deck);
+        let deck = Deck::from_str("JS2S2S2SJS2S").unwrap();
         let result = handle_game(&deck);
         assert_eq!(result, Looping);
     }
     #[test]
     fn test_looping_complex() {
-        let hand1 = vec![
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(King, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Queen, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(King, Diamonds),
-            Card::new(Queen, Diamonds),
-            Card::new(Ace, Diamonds),
-            Card::new(Jack, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Ace, Diamonds),
-            Card::new(Ace, Diamonds),
-            Card::new(Jack, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Jack, Diamonds),
-            Card::new(Two, Diamonds),
-            Card::new(Two, Diamonds),
-        ];
-        let hand2 = vec![
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Queen, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(King, Clubs),
-            Card::new(Queen, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Jack, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(Two, Clubs),
-            Card::new(King, Clubs),
-            Card::new(Ace, Clubs),
-        ];
-        let mut deck = Vec::new();
-        for card in hand1 {
-            deck.push(card);
-        }
-        for card in hand2 {
-            deck.push(card);
-        }
-        let deck = Deck::new_custom(deck);
+        let deck = Deck::from_str("2D2D2DKD2D2D2DQD2DKDQDADJD2D2D2D2D2DADADJD2D2DJD2D2D2D2D2D2D2D2D2D2D2D2DQS2S2S2S2SKSQS2SJS2S2S2S2S2SKSAS").unwrap();
         let result = handle_game(&deck);
         assert_eq!(result, Looping);
     }
