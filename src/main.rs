@@ -206,17 +206,16 @@ fn handle_penalty(
 mod tests {
     use crate::ExitStates::Looping;
     use crate::handle_game;
-    use deck::Deck;
 
     #[test]
     fn test_looping_simple() {
-        let deck = Deck::from_str("JS2S2S2SJS2S").unwrap();
+        let deck = "JS2S2S2SJS2S".parse().unwrap();
         let result = handle_game(&deck);
         assert_eq!(result, Looping);
     }
     #[test]
     fn test_looping_complex() {
-        let deck = Deck::from_str("2D2D2DKD2D2D2DQD2DKDQDADJD2D2D2D2D2DADADJD2D2DJD2D2D2D2D2D2D2D2D2D2D2D2DQS2S2S2S2SKSQS2SJS2S2S2S2S2SKSAS").unwrap();
+        let deck = "2D2D2DKD2D2D2DQD2DKDQDADJD2D2D2D2D2DADADJD2D2DJD2D2D2D2D2D2D2D2D2D2D2D2DQS2S2S2S2SKSQS2SJS2S2S2S2S2SKSAS".parse().unwrap();
         let result = handle_game(&deck);
         assert_eq!(result, Looping);
     }
