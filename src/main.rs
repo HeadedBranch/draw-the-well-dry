@@ -26,43 +26,21 @@ fn main() {
     let mut games: u128 = 0;
     let mut loops: u128 = 0;
 
-    let mut valid_lines = Vec::new();
-    let mut lines = String::new();
     println!("Starting save loading");
-    if let Ok(mut f) = OpenOptions::new().read(true).open("game_results.txt") {
-        let _ = f.read_to_string(&mut lines);
-        for line in lines.lines() {
-            if line.ends_with("P1") {
+    if let Ok(f) = OpenOptions::new().read(true).open("game_results.bin") {
+        let bytes = f.bytes();
+        for c in bytes {
+            if c.unwrap() == b'1' {
                 wins += 1;
-                valid_lines.push(line);
-            } else if line.ends_with("P2") {
-                valid_lines.push(line);
-            } else {
-                continue;
             }
             games += 1;
         }
     }
     println!("Save loaded");
-    if lines.lines().count() != valid_lines.iter().count() {
-        let file = match OpenOptions::new()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open("game_results.txt") {
-            Ok(x) => x,
-            Err(e) => panic!("{e}"),
-        };
-        let mut writer = BufWriter::new(file);
-        for line in valid_lines {
-            writeln!(writer, "{}", line).unwrap();
-        }
-        writer.flush().unwrap();
-    }
     let file = match OpenOptions::new()
         .create(true)
         .append(true)
-        .open("game_results.txt") {
+        .open("game_results.bin") {
         Ok(x) => x,
         Err(e) => panic!("{e}"),
     };
@@ -70,19 +48,18 @@ fn main() {
     println!("Initialisation complete");
     loop {
         deck.shuffle();
-        writer.write_fmt(format_args!("{}", deck)).unwrap();
         let state = handle_game(&deck);
         games += 1;
         match state {
             P1Win => {
-                writer.write_all(b"P1\n").unwrap();
+                writer.write_all(b"1").unwrap();
                 wins += 1;
             }
-            P2Win => writer.write_all(b"P2\n").unwrap(),
+            P2Win => writer.write_all(b"2").unwrap(),
             Looping => {
                 loops += 1;
                 #[allow(clippy::collapsible_if)]
-                if let Ok(mut file) = File::create("loop_configurations.txt") {
+                if let Ok(mut file) = File::create("loops.txt") {
                     if let Err(e) = file.write_all(format!("{:?}", deck.deck()).as_bytes()) {
                         println!("{:?}", deck.deck());
                         println!("{e}");
