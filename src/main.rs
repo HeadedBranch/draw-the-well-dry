@@ -26,7 +26,7 @@ fn main() {
     let mut games: u128 = 0;
     let mut loops: u128 = 0;
 
-    println!("Starting save loading");
+    println!("Loading Results file");
     if let Ok(f) = OpenOptions::new().read(true).open("game_results.bin") {
         let bytes = f.bytes();
         for c in bytes {
